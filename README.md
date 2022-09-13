@@ -1,6 +1,6 @@
 # hello-world
 
-A simple hello-world web application running with a non-root user on Alpine Linux in a Docker container.
+A simple hello-world web application running with a non-root user on Alpine Linux in a Docker container. 
 
 **If you want to test this image directly on a Kubernetes Cluster, skip down to the ['Using a Kubernetes Deployment'](#using-a-kubernetes-deployment) section below.**
 
@@ -31,6 +31,35 @@ Follow instructions as seen on:
 
 https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry
 
+# Its not recommended to use your personal ghcr.io repo for this tutorial, if you choose to use one, you will have to create and reference an `ImagePullSecret`
+Once you have A PAT token created, you can build an auth string using the following format:
+
+`username:123123adsfasdf123123` where username is your GitHub `username` and `123123adsfasdf123123` is the token with read:packages scope.
+
+let's Base64 encode it first:
+
+`echo -n "username:123123adsfasdf123123" | base64`
+
+Now, paste the encoded string within this json template and base64 it again
+
+`echo -n  '{"auths":{"ghcr.io":{"auth":"<enter base64 encoded string here>"}}}' | base64`
+
+and store it at as `dockerconfigjson.yaml` file.
+
+```
+kind: Secret
+type: kubernetes.io/dockerconfigjson
+apiVersion: v1
+metadata:
+  name: dockerconfigjson
+  labels:
+    app: hello-world
+data:
+  .dockerconfigjson: <enter double base64 encoded string here >
+```
+
+And now we have prepared all the pieces, time to create a new secret
+`kubectl create -f dockerconfigjson.yaml -n ${KUBE_NAMESPACE}`
 
 ### Push image to GHCR
 
@@ -136,3 +165,4 @@ spec:
       hostname: ${INGRESS_HOSTNAME}
 EOF
 ```
+
